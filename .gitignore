@@ -1,0 +1,8 @@
+node_modules/
+dist/
+output/
+*.ait
+.DS_Store
+.swc/
+.granite/
+package-lock.json

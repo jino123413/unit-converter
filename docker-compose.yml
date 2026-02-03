@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  build:
+    build: .
+    volumes:
+      # 빌드 결과물(.ait)만 호스트로 복사
+      - ./output:/app/output
+    command: sh -c "npm run build && mkdir -p /app/output && cp *.ait /app/output/"
