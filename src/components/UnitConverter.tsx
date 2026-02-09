@@ -39,6 +39,9 @@ const lengthUnits: UnitInfo[] = [
   { key: 'ft', name: '피트', symbol: 'ft', toBase: (v) => v * 0.3048, fromBase: (v) => v / 0.3048 },
   { key: 'yd', name: '야드', symbol: 'yd', toBase: (v) => v * 0.9144, fromBase: (v) => v / 0.9144 },
   { key: 'mile', name: '마일', symbol: 'mi', toBase: (v) => v * 1609.344, fromBase: (v) => v / 1609.344 },
+  // 한국 전통 단위
+  { key: 'ja', name: '자', symbol: '자', toBase: (v) => v * 0.30303, fromBase: (v) => v / 0.30303 },
+  { key: 'chi', name: '치', symbol: '치', toBase: (v) => v * 0.030303, fromBase: (v) => v / 0.030303 },
 ];
 
 const weightUnits: UnitInfo[] = [
