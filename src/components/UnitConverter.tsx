@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, TouchableOpacity, ScrollView, StyleSheet, TextInput, Animated, Clipboard } from 'react-native';
-import { Text } from '@toss/tds-react-native';
+import { View, TouchableOpacity, ScrollView, StyleSheet, TextInput, Clipboard } from 'react-native';
+import { Text, AlertDialog } from '@toss/tds-react-native';
 import { GoogleAdMob } from '@apps-in-toss/framework';
 
 type UnitCategory = 'length' | 'weight' | 'temperature' | 'area' | 'volume' | 'speed' | 'data';
@@ -160,21 +160,18 @@ export default function UnitConverter() {
   const [showHistory, setShowHistory] = useState(false);
   const [copied, setCopied] = useState(false);
   const [friendlyMsg, setFriendlyMsg] = useState('');
-  const [toastMessage, setToastMessage] = useState('');
-  const toastOpacity = useRef(new Animated.Value(0)).current;
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogDesc, setDialogDesc] = useState('');
 
   const adLoadedRef = useRef(false);
   const adAvailableRef = useRef(false);
 
-  const showToast = useCallback((message: string) => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToastMessage(message);
-    Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
-    toastTimerRef.current = setTimeout(() => {
-      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start();
-    }, 2000);
-  }, [toastOpacity]);
+  const showDialog = useCallback((title: string, description?: string) => {
+    setDialogTitle(title);
+    setDialogDesc(description || '');
+    setDialogOpen(true);
+  }, []);
 
   useEffect(() => {
     loadAd();
@@ -282,7 +279,7 @@ export default function UnitConverter() {
 
   const handleSaveRecord = useCallback(() => {
     if (!inputValue || !result) {
-      showToast('변환할 값을 먼저 입력해주세요');
+      showDialog('알림', '변환할 값을 먼저 입력해주세요');
       return;
     }
 
@@ -298,7 +295,7 @@ export default function UnitConverter() {
       };
 
       setRecentRecords(prev => [newRecord, ...prev].slice(0, 10));
-      showToast('✓ 변환 기록이 저장되었습니다');
+      showDialog('저장 완료', '변환 기록이 저장되었습니다');
     });
   }, [inputValue, result, category, fromUnit, toUnit]);
 
@@ -491,10 +488,14 @@ export default function UnitConverter() {
         </View>
       )}
 
-      {/* 인앱 토스트 */}
-      <Animated.View style={[styles.toast, { opacity: toastOpacity }]} pointerEvents="none">
-        <Text style={styles.toastText}>{toastMessage}</Text>
-      </Animated.View>
+      {/* TDS AlertDialog */}
+      <AlertDialog
+        open={dialogOpen}
+        title={dialogTitle}
+        description={dialogDesc}
+        onClose={() => setDialogOpen(false)}
+        buttonText="확인"
+      />
 
       {/* 단위 선택 피커 - To */}
       {showToPicker && (
@@ -875,21 +876,5 @@ const styles = StyleSheet.create({
   pickerSymbol: {
     fontSize: 14,
     color: '#868E96',
-  },
-  toast: {
-    position: 'absolute',
-    bottom: 80,
-    left: 24,
-    right: 24,
-    backgroundColor: 'rgba(33, 37, 41, 0.9)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  toastText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
 });
