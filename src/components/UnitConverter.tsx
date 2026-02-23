@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, TouchableOpacity, ScrollView, StyleSheet, TextInput, Clipboard } from 'react-native';
-import { Text, AlertDialog } from '@toss/tds-react-native';
-import { GoogleAdMob } from '@apps-in-toss/framework';
+import { useInterstitialAd } from '../hooks/useInterstitialAd';
+import BannerAd from './BannerAd';
 
 type UnitCategory = 'length' | 'weight' | 'temperature' | 'area' | 'volume' | 'speed' | 'data';
 
@@ -39,7 +38,6 @@ const lengthUnits: UnitInfo[] = [
   { key: 'ft', name: '피트', symbol: 'ft', toBase: (v) => v * 0.3048, fromBase: (v) => v / 0.3048 },
   { key: 'yd', name: '야드', symbol: 'yd', toBase: (v) => v * 0.9144, fromBase: (v) => v / 0.9144 },
   { key: 'mile', name: '마일', symbol: 'mi', toBase: (v) => v * 1609.344, fromBase: (v) => v / 1609.344 },
-  // 한국 전통 단위
   { key: 'ja', name: '자', symbol: '자', toBase: (v) => v * 0.30303, fromBase: (v) => v / 0.30303 },
   { key: 'chi', name: '치', symbol: '치', toBase: (v) => v * 0.030303, fromBase: (v) => v / 0.030303 },
 ];
@@ -56,15 +54,15 @@ const weightUnits: UnitInfo[] = [
 ];
 
 const temperatureUnits: UnitInfo[] = [
-  { key: 'c', name: '섭씨', symbol: '°C', toBase: (v) => v, fromBase: (v) => v },
-  { key: 'f', name: '화씨', symbol: '°F', toBase: (v) => (v - 32) * 5 / 9, fromBase: (v) => v * 9 / 5 + 32 },
+  { key: 'c', name: '섭씨', symbol: '\u00B0C', toBase: (v) => v, fromBase: (v) => v },
+  { key: 'f', name: '화씨', symbol: '\u00B0F', toBase: (v) => (v - 32) * 5 / 9, fromBase: (v) => v * 9 / 5 + 32 },
   { key: 'k', name: '켈빈', symbol: 'K', toBase: (v) => v - 273.15, fromBase: (v) => v + 273.15 },
 ];
 
 const areaUnits: UnitInfo[] = [
-  { key: 'cm2', name: '제곱센티미터', symbol: 'cm²', toBase: (v) => v / 10000, fromBase: (v) => v * 10000 },
-  { key: 'm2', name: '제곱미터', symbol: 'm²', toBase: (v) => v, fromBase: (v) => v },
-  { key: 'km2', name: '제곱킬로미터', symbol: 'km²', toBase: (v) => v * 1000000, fromBase: (v) => v / 1000000 },
+  { key: 'cm2', name: '제곱센티미터', symbol: 'cm\u00B2', toBase: (v) => v / 10000, fromBase: (v) => v * 10000 },
+  { key: 'm2', name: '제곱미터', symbol: 'm\u00B2', toBase: (v) => v, fromBase: (v) => v },
+  { key: 'km2', name: '제곱킬로미터', symbol: 'km\u00B2', toBase: (v) => v * 1000000, fromBase: (v) => v / 1000000 },
   { key: 'pyeong', name: '평', symbol: '평', toBase: (v) => v * 3.305785, fromBase: (v) => v / 3.305785 },
   { key: 'acre', name: '에이커', symbol: 'acre', toBase: (v) => v * 4046.8564, fromBase: (v) => v / 4046.8564 },
   { key: 'ha', name: '헥타르', symbol: 'ha', toBase: (v) => v * 10000, fromBase: (v) => v / 10000 },
@@ -75,7 +73,7 @@ const volumeUnits: UnitInfo[] = [
   { key: 'l', name: '리터', symbol: 'L', toBase: (v) => v, fromBase: (v) => v },
   { key: 'cc', name: '시시', symbol: 'cc', toBase: (v) => v / 1000, fromBase: (v) => v * 1000 },
   { key: 'gal', name: '갤런(US)', symbol: 'gal', toBase: (v) => v * 3.78541, fromBase: (v) => v / 3.78541 },
-  { key: 'm3', name: '세제곱미터', symbol: 'm³', toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
+  { key: 'm3', name: '세제곱미터', symbol: 'm\u00B3', toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
 ];
 
 const speedUnits: UnitInfo[] = [
@@ -94,50 +92,48 @@ const dataUnits: UnitInfo[] = [
 ];
 
 const categoryInfo: Record<UnitCategory, { name: string; icon: string; units: UnitInfo[] }> = {
-  length: { name: '길이', icon: '📏', units: lengthUnits },
-  weight: { name: '무게', icon: '⚖️', units: weightUnits },
-  temperature: { name: '온도', icon: '🌡️', units: temperatureUnits },
-  area: { name: '면적', icon: '📐', units: areaUnits },
-  volume: { name: '부피', icon: '🧪', units: volumeUnits },
-  speed: { name: '속도', icon: '🚀', units: speedUnits },
-  data: { name: '데이터', icon: '💾', units: dataUnits },
+  length: { name: '길이', icon: '\uD83D\uDCCF', units: lengthUnits },
+  weight: { name: '무게', icon: '\u2696\uFE0F', units: weightUnits },
+  temperature: { name: '온도', icon: '\uD83C\uDF21\uFE0F', units: temperatureUnits },
+  area: { name: '면적', icon: '\uD83D\uDCD0', units: areaUnits },
+  volume: { name: '부피', icon: '\uD83E\uDDEA', units: volumeUnits },
+  speed: { name: '속도', icon: '\uD83D\uDE80', units: speedUnits },
+  data: { name: '데이터', icon: '\uD83D\uDCBE', units: dataUnits },
 };
 
-// 차별화 기능: 자주 쓰는 변환 퀵 프리셋
 const quickPresets: Record<UnitCategory, QuickPreset[]> = {
   length: [
-    { fromUnit: 'in', toUnit: 'cm', value: '1', label: '1인치 → cm' },
-    { fromUnit: 'ft', toUnit: 'm', value: '1', label: '1피트 → m' },
-    { fromUnit: 'mile', toUnit: 'km', value: '1', label: '1마일 → km' },
+    { fromUnit: 'in', toUnit: 'cm', value: '1', label: '1인치 \u2192 cm' },
+    { fromUnit: 'ft', toUnit: 'm', value: '1', label: '1피트 \u2192 m' },
+    { fromUnit: 'mile', toUnit: 'km', value: '1', label: '1마일 \u2192 km' },
   ],
   weight: [
-    { fromUnit: 'lb', toUnit: 'kg', value: '1', label: '1파운드 → kg' },
-    { fromUnit: 'oz', toUnit: 'g', value: '1', label: '1온스 → g' },
-    { fromUnit: 'geun', toUnit: 'kg', value: '1', label: '1근 → kg' },
+    { fromUnit: 'lb', toUnit: 'kg', value: '1', label: '1파운드 \u2192 kg' },
+    { fromUnit: 'oz', toUnit: 'g', value: '1', label: '1온스 \u2192 g' },
+    { fromUnit: 'geun', toUnit: 'kg', value: '1', label: '1근 \u2192 kg' },
   ],
   temperature: [
-    { fromUnit: 'f', toUnit: 'c', value: '98.6', label: '체온(°F) → °C' },
-    { fromUnit: 'c', toUnit: 'f', value: '0', label: '빙점 → °F' },
+    { fromUnit: 'f', toUnit: 'c', value: '98.6', label: '체온(\u00B0F) \u2192 \u00B0C' },
+    { fromUnit: 'c', toUnit: 'f', value: '0', label: '빙점 \u2192 \u00B0F' },
   ],
   area: [
-    { fromUnit: 'pyeong', toUnit: 'm2', value: '1', label: '1평 → m²' },
-    { fromUnit: 'm2', toUnit: 'pyeong', value: '33', label: '33m² → 평' },
+    { fromUnit: 'pyeong', toUnit: 'm2', value: '1', label: '1평 \u2192 m\u00B2' },
+    { fromUnit: 'm2', toUnit: 'pyeong', value: '33', label: '33m\u00B2 \u2192 평' },
   ],
   volume: [
-    { fromUnit: 'gal', toUnit: 'l', value: '1', label: '1갤런 → L' },
-    { fromUnit: 'l', toUnit: 'ml', value: '1', label: '1리터 → mL' },
+    { fromUnit: 'gal', toUnit: 'l', value: '1', label: '1갤런 \u2192 L' },
+    { fromUnit: 'l', toUnit: 'ml', value: '1', label: '1리터 \u2192 mL' },
   ],
   speed: [
-    { fromUnit: 'kmh', toUnit: 'mph', value: '100', label: '100km/h → mph' },
-    { fromUnit: 'mps', toUnit: 'kmh', value: '1', label: '1m/s → km/h' },
+    { fromUnit: 'kmh', toUnit: 'mph', value: '100', label: '100km/h \u2192 mph' },
+    { fromUnit: 'mps', toUnit: 'kmh', value: '1', label: '1m/s \u2192 km/h' },
   ],
   data: [
-    { fromUnit: 'gb', toUnit: 'mb', value: '1', label: '1GB → MB' },
-    { fromUnit: 'mb', toUnit: 'kb', value: '1', label: '1MB → KB' },
+    { fromUnit: 'gb', toUnit: 'mb', value: '1', label: '1GB \u2192 MB' },
+    { fromUnit: 'mb', toUnit: 'kb', value: '1', label: '1MB \u2192 KB' },
   ],
 };
 
-// 친근한 메시지 (리텐션)
 const friendlyMessages = [
   '변환 완료!',
   '정확하게 계산했어요',
@@ -147,6 +143,7 @@ const friendlyMessages = [
 
 const PRIMARY_COLOR = '#5C6BC0';
 const AD_ID = 'ait.v2.live.2be710cefc03430e';
+const BANNER_AD_ID = 'ait.v2.live.6ffed085ec6b47cd';
 
 export default function UnitConverter() {
   const [category, setCategory] = useState<UnitCategory>('length');
@@ -160,71 +157,15 @@ export default function UnitConverter() {
   const [showHistory, setShowHistory] = useState(false);
   const [copied, setCopied] = useState(false);
   const [friendlyMsg, setFriendlyMsg] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogTitle, setDialogTitle] = useState('');
-  const [dialogDesc, setDialogDesc] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
 
-  const adLoadedRef = useRef(false);
-  const adAvailableRef = useRef(false);
+  const { showAd } = useInterstitialAd(AD_ID);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const showDialog = useCallback((title: string, description?: string) => {
-    setDialogTitle(title);
-    setDialogDesc(description || '');
-    setDialogOpen(true);
-  }, []);
-
-  useEffect(() => {
-    loadAd();
-  }, []);
-
-  const loadAd = () => {
-    try {
-      if (!GoogleAdMob || typeof GoogleAdMob.loadAppsInTossAdMob !== 'function') {
-        adAvailableRef.current = false;
-        return;
-      }
-      adAvailableRef.current = true;
-
-      GoogleAdMob.loadAppsInTossAdMob({
-        options: { adGroupId: AD_ID },
-        onEvent: (event: any) => {
-          if (event.type === 'loaded') {
-            adLoadedRef.current = true;
-          }
-        },
-        onError: () => {
-          adLoadedRef.current = false;
-        },
-      });
-    } catch {
-      adAvailableRef.current = false;
-    }
-  };
-
-  const showAd = (callback: () => void) => {
-    if (!adAvailableRef.current || !adLoadedRef.current) {
-      callback();
-      return;
-    }
-    try {
-      GoogleAdMob.showAppsInTossAdMob({
-        options: { adGroupId: AD_ID },
-        onEvent: (event: any) => {
-          if (event.type === 'dismissed') {
-            callback();
-            adLoadedRef.current = false;
-            loadAd();
-          }
-        },
-        onError: () => {
-          callback();
-          adLoadedRef.current = false;
-          loadAd();
-        },
-      });
-    } catch {
-      callback();
-    }
+  const showToast = (msg: string) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2000);
   };
 
   useEffect(() => {
@@ -244,7 +185,6 @@ export default function UnitConverter() {
     const converted = toUnit.fromBase(baseValue);
     setResult(converted.toLocaleString('ko-KR', { maximumFractionDigits: 6 }));
 
-    // 친근한 메시지 표시
     const randomMsg = friendlyMessages[Math.floor(Math.random() * friendlyMessages.length)];
     setFriendlyMsg(randomMsg);
   }, [inputValue, fromUnit, toUnit]);
@@ -255,17 +195,16 @@ export default function UnitConverter() {
     setToUnit(temp);
   };
 
-  // 차별화 기능: 결과 복사
   const copyResult = () => {
     if (result) {
       const textToCopy = `${inputValue} ${fromUnit.symbol} = ${result} ${toUnit.symbol}`;
-      Clipboard.setString(textToCopy);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
     }
   };
 
-  // 차별화 기능: 퀵 프리셋 적용
   const applyPreset = (preset: QuickPreset) => {
     const units = categoryInfo[category].units;
     const from = units.find(u => u.key === preset.fromUnit);
@@ -279,25 +218,27 @@ export default function UnitConverter() {
 
   const handleSaveRecord = useCallback(() => {
     if (!inputValue || !result) {
-      showDialog('알림', '변환할 값을 먼저 입력해주세요');
+      showToast('변환할 값을 먼저 입력해주세요');
       return;
     }
 
-    showAd(() => {
-      const newRecord: ConversionRecord = {
-        id: Date.now().toString(),
-        category,
-        fromUnit: fromUnit.key,
-        toUnit: toUnit.key,
-        fromValue: inputValue,
-        toValue: result,
-        timestamp: Date.now(),
-      };
+    showAd({
+      onDismiss: () => {
+        const newRecord: ConversionRecord = {
+          id: Date.now().toString(),
+          category,
+          fromUnit: fromUnit.key,
+          toUnit: toUnit.key,
+          fromValue: inputValue,
+          toValue: result,
+          timestamp: Date.now(),
+        };
 
-      setRecentRecords(prev => [newRecord, ...prev].slice(0, 10));
-      showDialog('저장 완료', '변환 기록이 저장되었습니다');
+        setRecentRecords(prev => [newRecord, ...prev].slice(0, 10));
+        showToast('변환 기록이 저장되었습니다');
+      },
     });
-  }, [inputValue, result, category, fromUnit, toUnit]);
+  }, [inputValue, result, category, fromUnit, toUnit, showAd]);
 
   const applyRecord = (record: ConversionRecord) => {
     setCategory(record.category);
@@ -318,563 +259,245 @@ export default function UnitConverter() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* 카테고리 탭 - 크기 수정 */}
-      <View style={styles.categoryContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScrollContent}>
+    <div className="flex flex-col min-h-screen bg-[#F8F9FA] relative">
+      {/* 카테고리 탭 */}
+      <div className="bg-white border-b border-[#E9ECEF] py-2">
+        <div className="flex overflow-x-auto px-3 gap-2 scrollbar-hide">
           {(Object.keys(categoryInfo) as UnitCategory[]).map((cat) => (
-            <TouchableOpacity
+            <button
               key={cat}
-              style={[styles.categoryTab, category === cat && styles.categoryTabActive]}
-              onPress={() => setCategory(cat)}
+              className={`flex flex-col items-center justify-center px-4 py-2.5 rounded-[20px] min-w-[70px] min-h-[56px] shrink-0 transition-colors ${
+                category === cat
+                  ? 'bg-primary text-white'
+                  : 'bg-[#F1F3F5] text-[#495057]'
+              }`}
+              onClick={() => setCategory(cat)}
             >
-              <Text style={styles.categoryIcon}>{categoryInfo[cat].icon}</Text>
-              <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>
+              <span className="text-xl mb-1">{categoryInfo[cat].icon}</span>
+              <span className={`text-xs ${category === cat ? 'font-bold' : 'font-medium'}`}>
                 {categoryInfo[cat].name}
-              </Text>
-            </TouchableOpacity>
+              </span>
+            </button>
           ))}
-        </ScrollView>
-      </View>
+        </div>
+      </div>
 
-      <ScrollView style={styles.content}>
-        {/* 퀵 프리셋 (차별화 기능) */}
-        <View style={styles.presetSection}>
-          <Text style={styles.presetTitle}>자주 쓰는 변환</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <div className="flex-1 overflow-y-auto p-4">
+        {/* 퀵 프리셋 */}
+        <div className="mb-3">
+          <p className="text-[13px] text-[#868E96] mb-2 ml-1">자주 쓰는 변환</p>
+          <div className="flex overflow-x-auto gap-2 scrollbar-hide">
             {quickPresets[category].map((preset, idx) => (
-              <TouchableOpacity
+              <button
                 key={idx}
-                style={styles.presetChip}
-                onPress={() => applyPreset(preset)}
+                className="bg-[#E8EAF6] px-3.5 py-2 rounded-2xl shrink-0 active:opacity-70 transition-opacity"
+                onClick={() => applyPreset(preset)}
               >
-                <Text style={styles.presetText}>{preset.label}</Text>
-              </TouchableOpacity>
+                <span className="text-[13px] text-primary font-medium">{preset.label}</span>
+              </button>
             ))}
-          </ScrollView>
-        </View>
+          </div>
+        </div>
 
         {/* 메인 변환 카드 */}
-        <View style={styles.card}>
-          <Text style={styles.label}>변환할 값</Text>
-          <TouchableOpacity style={styles.unitSelector} onPress={() => setShowFromPicker(true)}>
-            <Text style={styles.unitName}>{fromUnit.name}</Text>
-            <Text style={styles.unitSymbol}>{fromUnit.symbol}</Text>
-          </TouchableOpacity>
-          <TextInput
-            style={styles.input}
+        <div className="bg-white rounded-[20px] p-5 mb-3 shadow-sm">
+          <p className="text-[13px] text-[#868E96] mb-2">변환할 값</p>
+          <button
+            className="w-full bg-[#F8F9FA] rounded-xl p-3.5 mb-3 flex justify-between items-center active:opacity-70 transition-opacity"
+            onClick={() => setShowFromPicker(true)}
+          >
+            <span className="text-base font-semibold text-[#212529]">{fromUnit.name}</span>
+            <span className="text-sm text-[#868E96]">{fromUnit.symbol}</span>
+          </button>
+          <input
+            type="number"
+            className="w-full bg-[#F8F9FA] rounded-xl px-4 py-4 text-xl mb-4 text-[#212529] outline-none border border-transparent focus:border-primary transition-colors"
             value={inputValue}
-            onChangeText={setInputValue}
-            keyboardType="numeric"
+            onChange={(e) => setInputValue(e.target.value)}
             placeholder="값 입력"
-            placeholderTextColor="#ADB5BD"
           />
 
-          <TouchableOpacity style={styles.swapButton} onPress={swapUnits}>
-            <Text style={styles.swapIcon}>⇅</Text>
-          </TouchableOpacity>
+          <div className="flex justify-center my-2">
+            <button
+              className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[22px] active:opacity-80 transition-opacity"
+              style={{ backgroundColor: PRIMARY_COLOR, boxShadow: `0 4px 8px ${PRIMARY_COLOR}4D` }}
+              onClick={swapUnits}
+            >
+              <i className="ri-arrow-up-down-line text-xl"></i>
+            </button>
+          </div>
 
-          <Text style={styles.label}>변환 결과</Text>
-          <TouchableOpacity style={styles.unitSelector} onPress={() => setShowToPicker(true)}>
-            <Text style={styles.unitName}>{toUnit.name}</Text>
-            <Text style={styles.unitSymbol}>{toUnit.symbol}</Text>
-          </TouchableOpacity>
-          <View style={styles.resultBox}>
-            <View style={styles.resultContent}>
-              <Text style={styles.resultText}>{result || '-'}</Text>
-              <Text style={styles.resultUnit}>{toUnit.symbol}</Text>
-            </View>
-            {/* 복사 버튼 (차별화 기능) */}
+          <p className="text-[13px] text-[#868E96] mb-2 mt-2">변환 결과</p>
+          <button
+            className="w-full bg-[#F8F9FA] rounded-xl p-3.5 mb-3 flex justify-between items-center active:opacity-70 transition-opacity"
+            onClick={() => setShowToPicker(true)}
+          >
+            <span className="text-base font-semibold text-[#212529]">{toUnit.name}</span>
+            <span className="text-sm text-[#868E96]">{toUnit.symbol}</span>
+          </button>
+          <div className="bg-[#F8F9FA] rounded-xl p-4">
+            <div className="flex justify-between items-center">
+              <span className="text-2xl font-bold text-primary flex-1 break-all">{result || '-'}</span>
+              <span className="text-base text-[#868E96] ml-2 shrink-0">{toUnit.symbol}</span>
+            </div>
             {result && (
-              <TouchableOpacity style={styles.copyButton} onPress={copyResult}>
-                <Text style={styles.copyButtonText}>{copied ? '✓ 복사됨' : '📋 복사'}</Text>
-              </TouchableOpacity>
+              <button
+                className="mt-3 bg-[#E8EAF6] px-4 py-2 rounded-lg active:opacity-70 transition-opacity"
+                onClick={copyResult}
+              >
+                <span className="text-[13px] text-primary font-medium">
+                  {copied ? '\u2713 복사됨' : '\uD83D\uDCCB 복사'}
+                </span>
+              </button>
             )}
-          </View>
-        </View>
+          </div>
+        </div>
 
         {/* 변환 공식 + 친근한 메시지 */}
         {inputValue && result && (
-          <View style={styles.formulaCard}>
-            <Text style={styles.formulaText}>
+          <div className="bg-[#E8EAF6] rounded-xl p-4 mb-3 text-center">
+            <p className="text-base font-semibold text-primary">
               {inputValue} {fromUnit.symbol} = {result} {toUnit.symbol}
-            </Text>
+            </p>
             {friendlyMsg && (
-              <Text style={styles.friendlyMsg}>{friendlyMsg}</Text>
+              <p className="text-[13px] text-[#7986CB] mt-1.5">{friendlyMsg}</p>
             )}
-          </View>
+          </div>
         )}
 
+        {/* 배너 광고 */}
+        <div className="mb-3 rounded-2xl overflow-hidden">
+          <BannerAd adGroupId={BANNER_AD_ID} />
+        </div>
+
         {/* 기록 저장 버튼 (광고 연동) */}
-        <TouchableOpacity
-          style={[styles.saveButton, (!inputValue || !result) && styles.saveButtonDisabled]}
-          onPress={handleSaveRecord}
+        <button
+          className={`w-full bg-white rounded-2xl p-4 mb-3 border border-[#E9ECEF] text-center active:opacity-70 transition-opacity ${
+            (!inputValue || !result) ? 'opacity-50' : ''
+          }`}
+          onClick={handleSaveRecord}
           disabled={!inputValue || !result}
         >
-          <View style={styles.saveButtonContent}>
-            <Text style={styles.saveButtonText}>📝 이 변환 기록 저장하기</Text>
-            <View style={styles.adBadge}>
-              <Text style={styles.adBadgeText}>AD</Text>
-            </View>
-          </View>
-          <Text style={styles.saveButtonHint}>광고 시청 후 기록이 저장됩니다</Text>
-        </TouchableOpacity>
+          <div className="flex items-center justify-center mb-1">
+            <span className="text-[15px] font-semibold text-[#495057]">
+              <i className="ri-file-text-line mr-1"></i>
+              이 변환 기록 저장하기
+            </span>
+            <span className="bg-[#FFF3CD] rounded px-1.5 py-0.5 ml-2 text-[10px] font-bold text-[#856404]">AD</span>
+          </div>
+          <p className="text-xs text-[#ADB5BD]">광고 시청 후 기록이 저장됩니다</p>
+        </button>
 
         {/* 최근 기록 섹션 */}
         {recentRecords.length > 0 && (
-          <View style={styles.historySection}>
-            <TouchableOpacity
-              style={styles.historyHeader}
-              onPress={() => setShowHistory(!showHistory)}
+          <div className="bg-white rounded-2xl overflow-hidden mb-3">
+            <button
+              className="w-full flex justify-between items-center p-4 border-b border-[#F1F3F5] active:opacity-70 transition-opacity"
+              onClick={() => setShowHistory(!showHistory)}
             >
-              <Text style={styles.historyTitle}>📋 최근 변환 기록 ({recentRecords.length})</Text>
-              <Text style={styles.historyToggle}>{showHistory ? '▲' : '▼'}</Text>
-            </TouchableOpacity>
+              <span className="text-sm font-semibold text-[#495057]">
+                <i className="ri-clipboard-line mr-1"></i>
+                최근 변환 기록 ({recentRecords.length})
+              </span>
+              <span className="text-xs text-[#868E96]">{showHistory ? '\u25B2' : '\u25BC'}</span>
+            </button>
 
             {showHistory && (
-              <View style={styles.historyList}>
+              <div className="px-2">
                 {recentRecords.map((record) => (
-                  <TouchableOpacity
+                  <button
                     key={record.id}
-                    style={styles.historyItem}
-                    onPress={() => applyRecord(record)}
+                    className="w-full flex justify-between items-center p-3 border-b border-[#F8F9FA] active:opacity-70 transition-opacity text-left"
+                    onClick={() => applyRecord(record)}
                   >
-                    <View style={styles.historyItemLeft}>
-                      <Text style={styles.historyIcon}>{categoryInfo[record.category].icon}</Text>
-                      <View>
-                        <Text style={styles.historyText}>
-                          {record.fromValue} {categoryInfo[record.category].units.find(u => u.key === record.fromUnit)?.symbol} → {record.toValue} {categoryInfo[record.category].units.find(u => u.key === record.toUnit)?.symbol}
-                        </Text>
-                        <Text style={styles.historyTime}>{formatTime(record.timestamp)}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.historyApply}>적용</Text>
-                  </TouchableOpacity>
+                    <div className="flex items-center flex-1">
+                      <span className="text-xl mr-3">{categoryInfo[record.category].icon}</span>
+                      <div>
+                        <p className="text-sm font-medium text-[#212529]">
+                          {record.fromValue} {categoryInfo[record.category].units.find(u => u.key === record.fromUnit)?.symbol} &rarr; {record.toValue} {categoryInfo[record.category].units.find(u => u.key === record.toUnit)?.symbol}
+                        </p>
+                        <p className="text-xs text-[#ADB5BD] mt-0.5">{formatTime(record.timestamp)}</p>
+                      </div>
+                    </div>
+                    <span className="text-[13px] text-primary font-semibold shrink-0 ml-2">적용</span>
+                  </button>
                 ))}
-              </View>
+              </div>
             )}
-          </View>
+          </div>
         )}
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+        <div className="h-10" />
+      </div>
 
       {/* 단위 선택 피커 - From */}
       {showFromPicker && (
-        <View style={styles.pickerOverlay}>
-          <TouchableOpacity style={styles.pickerBackdrop} onPress={() => setShowFromPicker(false)} />
-          <View style={styles.pickerContent}>
-            <View style={styles.pickerHeader}>
-              <Text style={styles.pickerTitle}>단위 선택</Text>
-              <TouchableOpacity onPress={() => setShowFromPicker(false)}>
-                <Text style={styles.pickerClose}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView>
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowFromPicker(false)} />
+          <div className="relative bg-white rounded-t-3xl max-h-[60%] pb-8 flex flex-col">
+            <div className="flex justify-between items-center py-5 px-5 border-b border-[#E9ECEF]">
+              <span className="text-lg font-bold text-[#212529]">단위 선택</span>
+              <button className="text-xl text-[#868E96] p-1" onClick={() => setShowFromPicker(false)}>
+                <i className="ri-close-line"></i>
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1">
               {categoryInfo[category].units.map((unit) => (
-                <TouchableOpacity
+                <button
                   key={unit.key}
-                  style={[styles.pickerItem, fromUnit.key === unit.key && styles.pickerItemActive]}
-                  onPress={() => { setFromUnit(unit); setShowFromPicker(false); }}
+                  className={`w-full flex justify-between items-center py-4 px-5 border-b border-[#F1F3F5] active:opacity-70 transition-opacity ${
+                    fromUnit.key === unit.key ? 'bg-[#E8EAF6]' : ''
+                  }`}
+                  onClick={() => { setFromUnit(unit); setShowFromPicker(false); }}
                 >
-                  <Text style={[styles.pickerItemText, fromUnit.key === unit.key && styles.pickerItemTextActive]}>
+                  <span className={`text-base ${fromUnit.key === unit.key ? 'font-bold text-primary' : 'font-medium text-[#212529]'}`}>
                     {unit.name}
-                  </Text>
-                  <Text style={styles.pickerSymbol}>{unit.symbol}</Text>
-                </TouchableOpacity>
+                  </span>
+                  <span className="text-sm text-[#868E96]">{unit.symbol}</span>
+                </button>
               ))}
-            </ScrollView>
-          </View>
-        </View>
+            </div>
+          </div>
+        </div>
       )}
-
-      {/* TDS AlertDialog */}
-      <AlertDialog
-        open={dialogOpen}
-        title={dialogTitle}
-        description={dialogDesc}
-        onClose={() => setDialogOpen(false)}
-        buttonText="확인"
-      />
 
       {/* 단위 선택 피커 - To */}
       {showToPicker && (
-        <View style={styles.pickerOverlay}>
-          <TouchableOpacity style={styles.pickerBackdrop} onPress={() => setShowToPicker(false)} />
-          <View style={styles.pickerContent}>
-            <View style={styles.pickerHeader}>
-              <Text style={styles.pickerTitle}>단위 선택</Text>
-              <TouchableOpacity onPress={() => setShowToPicker(false)}>
-                <Text style={styles.pickerClose}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView>
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowToPicker(false)} />
+          <div className="relative bg-white rounded-t-3xl max-h-[60%] pb-8 flex flex-col">
+            <div className="flex justify-between items-center py-5 px-5 border-b border-[#E9ECEF]">
+              <span className="text-lg font-bold text-[#212529]">단위 선택</span>
+              <button className="text-xl text-[#868E96] p-1" onClick={() => setShowToPicker(false)}>
+                <i className="ri-close-line"></i>
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1">
               {categoryInfo[category].units.map((unit) => (
-                <TouchableOpacity
+                <button
                   key={unit.key}
-                  style={[styles.pickerItem, toUnit.key === unit.key && styles.pickerItemActive]}
-                  onPress={() => { setToUnit(unit); setShowToPicker(false); }}
+                  className={`w-full flex justify-between items-center py-4 px-5 border-b border-[#F1F3F5] active:opacity-70 transition-opacity ${
+                    toUnit.key === unit.key ? 'bg-[#E8EAF6]' : ''
+                  }`}
+                  onClick={() => { setToUnit(unit); setShowToPicker(false); }}
                 >
-                  <Text style={[styles.pickerItemText, toUnit.key === unit.key && styles.pickerItemTextActive]}>
+                  <span className={`text-base ${toUnit.key === unit.key ? 'font-bold text-primary' : 'font-medium text-[#212529]'}`}>
                     {unit.name}
-                  </Text>
-                  <Text style={styles.pickerSymbol}>{unit.symbol}</Text>
-                </TouchableOpacity>
+                  </span>
+                  <span className="text-sm text-[#868E96]">{unit.symbol}</span>
+                </button>
               ))}
-            </ScrollView>
-          </View>
-        </View>
+            </div>
+          </div>
+        </div>
       )}
-    </View>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[100] bg-[#333] text-white text-sm px-5 py-3 rounded-xl shadow-lg animate-fade-in">
+          {toast}
+        </div>
+      )}
+    </div>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  // 카테고리 탭 - 크기 수정
-  categoryContainer: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E9ECEF',
-    paddingVertical: 8,
-  },
-  categoryScrollContent: {
-    paddingHorizontal: 12,
-  },
-  categoryTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#F1F3F5',
-    marginHorizontal: 4,
-    alignItems: 'center',
-    minWidth: 70,
-    minHeight: 56,
-    justifyContent: 'center',
-  },
-  categoryTabActive: {
-    backgroundColor: PRIMARY_COLOR,
-  },
-  categoryIcon: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
-  categoryText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#495057',
-  },
-  categoryTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  // 퀵 프리셋
-  presetSection: {
-    marginBottom: 12,
-  },
-  presetTitle: {
-    fontSize: 13,
-    color: '#868E96',
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  presetChip: {
-    backgroundColor: '#E8EAF6',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-    marginRight: 8,
-  },
-  presetText: {
-    fontSize: 13,
-    color: PRIMARY_COLOR,
-    fontWeight: '500',
-  },
-  // 메인 카드
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  label: {
-    fontSize: 13,
-    color: '#868E96',
-    marginBottom: 8,
-  },
-  unitSelector: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  unitName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#212529',
-  },
-  unitSymbol: {
-    fontSize: 14,
-    color: '#868E96',
-  },
-  input: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 20,
-    marginBottom: 16,
-    color: '#212529',
-  },
-  swapButton: {
-    alignSelf: 'center',
-    backgroundColor: PRIMARY_COLOR,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 8,
-    shadowColor: PRIMARY_COLOR,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  swapIcon: {
-    color: '#FFFFFF',
-    fontSize: 22,
-  },
-  resultBox: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-  },
-  resultContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  resultText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: PRIMARY_COLOR,
-    flex: 1,
-  },
-  resultUnit: {
-    fontSize: 16,
-    color: '#868E96',
-    marginLeft: 8,
-  },
-  copyButton: {
-    marginTop: 12,
-    backgroundColor: '#E8EAF6',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  copyButtonText: {
-    fontSize: 13,
-    color: PRIMARY_COLOR,
-    fontWeight: '500',
-  },
-  // 공식 카드
-  formulaCard: {
-    backgroundColor: '#E8EAF6',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  formulaText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: PRIMARY_COLOR,
-  },
-  friendlyMsg: {
-    fontSize: 13,
-    color: '#7986CB',
-    marginTop: 6,
-  },
-  // 저장 버튼
-  saveButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    opacity: 0.5,
-  },
-  saveButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  saveButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#495057',
-  },
-  adBadge: {
-    backgroundColor: '#FFF3CD',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 8,
-  },
-  adBadgeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#856404',
-  },
-  saveButtonHint: {
-    fontSize: 12,
-    color: '#ADB5BD',
-  },
-  // 기록 섹션
-  historySection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  historyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-  },
-  historyTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#495057',
-  },
-  historyToggle: {
-    fontSize: 12,
-    color: '#868E96',
-  },
-  historyList: {
-    paddingHorizontal: 8,
-  },
-  historyItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F8F9FA',
-  },
-  historyItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  historyIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  historyText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#212529',
-  },
-  historyTime: {
-    fontSize: 12,
-    color: '#ADB5BD',
-    marginTop: 2,
-  },
-  historyApply: {
-    fontSize: 13,
-    color: PRIMARY_COLOR,
-    fontWeight: '600',
-  },
-  // 피커
-  pickerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'flex-end',
-  },
-  pickerBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  pickerContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '60%',
-    paddingBottom: 32,
-  },
-  pickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E9ECEF',
-  },
-  pickerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#212529',
-  },
-  pickerClose: {
-    fontSize: 20,
-    color: '#868E96',
-    padding: 4,
-  },
-  pickerItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  pickerItemActive: {
-    backgroundColor: '#E8EAF6',
-  },
-  pickerItemText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#212529',
-  },
-  pickerItemTextActive: {
-    fontWeight: '700',
-    color: PRIMARY_COLOR,
-  },
-  pickerSymbol: {
-    fontSize: 14,
-    color: '#868E96',
-  },
-});
